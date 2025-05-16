@@ -25,6 +25,11 @@ local function new()
         end
     })
     local prog = {}
+    local handlers = {
+        ecall = function(...) end,
+        ebreak = function(...) end,
+    }
+
     local function print_state()
         print(string.format("PC: 0x%08x", pc))
         print("Register file:")
@@ -152,6 +157,12 @@ local function new()
                 return "or", rd, rs1, rs2, nil
             elseif funct3 == 0x7 and funct7 == 0x0 then
                 return "and", rd, rs1, rs2, nil
+            end
+        elseif opcode == 0x73 then
+            if rs2 == 0x0 then
+                return "ecall", nil, nil, nil, nil
+            elseif rs2 == 0x1 then
+                return "ebreak", nil, nil, nil, nil
             end
         else
             error(string.format("Invalid opcode 0x%08x", instr))
@@ -354,6 +365,10 @@ local function new()
             local val = (reg[rs2] & 0xFF) << shamt
             local mask = ~(0xFF << shamt)
             mem[baseaddr] = (mem[baseaddr] & mask) | val
+        elseif instr == "ecall" then
+            handlers.ecall(reg, pc, mem, prog)
+        elseif instr == "ebreak" then
+            handlers.ebreak(reg, pc, mem, prog)
         end
         if advpc then
             pc = (pc + 4) & 0xFFFFFFFF
@@ -393,6 +408,7 @@ local function new()
         end,
         mem = mem,
         prog = prog,
+        handlers = handlers,
         print_state = print_state,
         load_binary = load_binary,
         set_reg = set_reg,
