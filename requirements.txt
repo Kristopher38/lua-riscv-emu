@@ -1,0 +1,4 @@
+git+https://github.com/Kristopher38/riscv-python-model
+lupa >= 2.4
+tqdm
+timeit_decorator
